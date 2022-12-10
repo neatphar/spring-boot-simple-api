@@ -27,6 +27,18 @@ docker-build:
     - "docker login -u ${CI_REGISTRY_USER} -p ${CI_JOB_TOKEN} ${CI_REGISTRY_IMAGE}"
     - "docker push -t ${DOCKER_IMAGE_TAG}"
 
+smoke-test:
+  stage: deploy
+  image: ${CI_REGISTRY_IMAGE}/java-app:${CI_COMMIT_SHORT_SHA}
+  variables:
+    TEST_URL: http://localhost:8080/
+  script:
+    - HTTP=`curl -m4 -sLo /dev/null -w"%{http_code}" $TEST_URL"`
+    - if test $HTTP -ne 200; then exit 1; fi;
+  rules:
+    - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /master/
+      when: manual
+
 k8s-deploy:
   stage: deploy
   image: bitnami/kubectl
